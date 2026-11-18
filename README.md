@@ -40,6 +40,18 @@ Neither workflow needs secrets. Both only need `contents: read`; no SARIF upload
 **After editing any workflow, run `gh actions-lock` and commit the workflows and
 `.github/workflows/actions.lock` together.** `actions-lock-check` fails when they drift apart.
 
+## Developing this repo
+
+`.github/workflows/ci.yml` runs both workflows against this repo through `$/` self-repository calls, so a
+PR is checked by its own version of them. Dependabot (`.github/dependabot.yml`, weekly, 7-day cooldown)
+proposes action bumps together with `actions.lock` changes.
+
+The reusable workflows use tag refs (`actions/checkout@v7.0.1`). The pins live in this repo's
+`actions.lock`, and the runner enforces them for callers too: a reusable workflow's dependencies are covered
+by the lockfile of the repository that defines it
+([docs](https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles)). Callers
+pin this repo itself with the tag or SHA in their `jobs.<id>.uses`.
+
 ## Inputs
 
 ### `action-security-check.yml`
