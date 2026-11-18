@@ -40,6 +40,18 @@ Neither workflow needs secrets. Both only need `contents: read`; no SARIF upload
 **After editing any workflow, run `gh actions-lock` and commit the workflows and
 `.github/workflows/actions.lock` together.** `actions-lock-check` fails when they drift apart.
 
+## Developing this repo
+
+`.github/workflows/ci.yml` runs both workflows against this repo through `$/` self-repository calls, so a
+PR is checked by its own version of them. Dependabot (`.github/dependabot.yml`, weekly, 7-day cooldown)
+proposes action bumps together with `actions.lock` changes.
+
+The two reusable workflows keep full-SHA `uses:` pins. Don't let `gh actions-lock` turn them into tags:
+a caller's lockfile doesn't cover a reusable workflow from another repository
+([gh-actions-lock#179](https://github.com/github/gh-actions-lock/issues/179)), so the SHA is the
+only pin callers get. `gh actions-lock --verify` accepts the SHAs and only prints a warning. To relock after an
+edit, run `gh actions-lock`, then restore the SHA pins (with their `# vX.Y.Z` comments) in those two files.
+
 ## Inputs
 
 ### `action-security-check.yml`

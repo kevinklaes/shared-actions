@@ -1,0 +1,21 @@
+# Dogfood: run this repo's own reusable workflows against itself.
+# Same-repo `uses: $/...` calls exercise the version on the PR branch.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  zizmor:
+    uses: $/.github/workflows/action-security-check.yml
+    permissions:
+      contents: read
+
+  actions-lock:
+    uses: $/.github/workflows/actions-lock-check.yml
+    permissions:
+      contents: read
