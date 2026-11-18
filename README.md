@@ -46,11 +46,11 @@ Neither workflow needs secrets. Both only need `contents: read`; no SARIF upload
 PR is checked by its own version of them. Dependabot (`.github/dependabot.yml`, weekly, 7-day cooldown)
 proposes action bumps together with `actions.lock` changes.
 
-The two reusable workflows keep full-SHA `uses:` pins. Don't let `gh actions-lock` turn them into tags:
-a caller's lockfile doesn't cover a reusable workflow from another repository
-([gh-actions-lock#179](https://github.com/github/gh-actions-lock/issues/179)), so the SHA is the
-only pin callers get. `gh actions-lock --verify` accepts the SHAs and only prints a warning. To relock after an
-edit, run `gh actions-lock`, then restore the SHA pins (with their `# vX.Y.Z` comments) in those two files.
+The reusable workflows use tag refs (`actions/checkout@v7.0.1`). The pins live in this repo's
+`actions.lock`, and the runner enforces them for callers too: a reusable workflow's dependencies are covered
+by the lockfile of the repository that defines it
+([docs](https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles)). Callers
+pin this repo itself with the tag or SHA in their `jobs.<id>.uses`.
 
 ## Inputs
 
