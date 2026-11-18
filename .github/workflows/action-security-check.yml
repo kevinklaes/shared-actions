@@ -1,0 +1,41 @@
+# Reusable workflow: audit the caller's GitHub Actions with zizmor.
+#
+# zizmor runs over the caller's checkout and picks up its zizmor.yml
+# (repo root or .github/) automatically. Findings at or above
+# `min-severity` fail the job and show up as annotations.
+name: action-security-check
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: JSON for jobs.<id>.runs-on, e.g. '"ubuntu-slim"' or '["self-hosted", "training-mini"]'.
+        type: string
+        default: '"ubuntu-slim"'
+      zizmor-version:
+        description: Exact zizmor version (>= 1.32.0, the first that understands actions.lock).
+        type: string
+        default: "1.32.0"
+      min-severity:
+        description: Lowest severity that fails the job (unknown, informational, low, medium, high).
+        type: string
+        default: low
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: zizmor
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          version: ${{ inputs.zizmor-version }}
+          min-severity: ${{ inputs.min-severity }}
+          advanced-security: false
+          annotations: true

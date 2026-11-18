@@ -1,0 +1,37 @@
+# Reusable workflow: fail when the caller's .github/workflows/actions.lock
+# is out of sync with its workflows or corrupt.
+# See https://hugovk.dev/blog/2026/lock-github-actions/.
+name: actions-lock-check
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: JSON for jobs.<id>.runs-on, e.g. '"ubuntu-slim"' or '["self-hosted", "training-mini"]'.
+        type: string
+        default: '"ubuntu-slim"'
+      gh-actions-lock-version:
+        description: Tag of github/gh-actions-lock to install.
+        type: string
+        default: v0.4.1
+
+permissions: {}
+
+jobs:
+  lockfile:
+    name: actions.lock
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install gh-actions-lock
+        env:
+          GH_ACTIONS_LOCK_VERSION: ${{ inputs.gh-actions-lock-version }}
+        run: gh extension install github/gh-actions-lock --pin "$GH_ACTIONS_LOCK_VERSION"
+      - name: Verify actions.lock
+        run: gh actions-lock --verify
