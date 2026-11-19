@@ -1,0 +1,6 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "kevinklaes/shared-actions/*": ref-pin
+        "*": hash-pin

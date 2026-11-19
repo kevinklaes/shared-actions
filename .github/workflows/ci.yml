@@ -19,3 +19,12 @@ jobs:
     uses: $/.github/workflows/actions-lock-check.yml
     permissions:
       contents: read
+
+  # A caller whose workflows only call reusable workflows gets an actions.lock
+  # with no `dependencies:` key (sa-3qf).
+  zizmor-no-dependencies:
+    uses: $/.github/workflows/action-security-check.yml
+    permissions:
+      contents: read
+    with:
+      path: tests/fixtures/no-dependencies

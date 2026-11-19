@@ -20,6 +20,10 @@ on:
         description: Lowest severity that fails the job (unknown, informational, low, medium, high).
         type: string
         default: low
+      path:
+        description: Directory to audit, relative to the checkout root.
+        type: string
+        default: "."
 
 permissions: {}
 
@@ -33,9 +37,42 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+      # zizmor reads the lockfile and zizmor.yml of the git root enclosing its
+      # input, so a `path` below the checkout root is made a git root of its own.
+      #
+      # zizmor 1.32.0 can't parse an actions.lock without a `dependencies:` key
+      # ("missing field `dependencies`"). gh actions-lock writes one when the
+      # workflows call only reusable workflows and use no actions directly. Such
+      # a lockfile pins nothing, so audit without it; actions-lock-check still
+      # verifies the file.
+      - name: Prepare audit root
+        id: prepare
+        env:
+          AUDIT_PATH: ${{ inputs.path }}
+        run: |
+          if [ ! -e "$AUDIT_PATH/.git" ]; then
+            git init -q "$AUDIT_PATH"
+            echo "git-init=true" >> "$GITHUB_OUTPUT"
+          fi
+          lockfile="$AUDIT_PATH/.github/workflows/actions.lock"
+          if [ -f "$lockfile" ] && ! grep -q '^dependencies:' "$lockfile"; then
+            echo "::notice file=$lockfile::actions.lock has no dependencies; zizmor runs without it"
+            mv "$lockfile" "$RUNNER_TEMP/actions.lock"
+            echo "moved-lockfile=$lockfile" >> "$GITHUB_OUTPUT"
+          fi
       - uses: zizmorcore/zizmor-action@v0.8.1
         with:
+          inputs: ${{ inputs.path }}
           version: ${{ inputs.zizmor-version }}
           min-severity: ${{ inputs.min-severity }}
           advanced-security: false
           annotations: true
+      - name: Restore audit root
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          AUDIT_PATH: ${{ inputs.path }}
+          GIT_INIT: ${{ steps.prepare.outputs.git-init }}
+          LOCKFILE: ${{ steps.prepare.outputs.moved-lockfile }}
+        run: |
+          if [ -n "$LOCKFILE" ]; then mv "$RUNNER_TEMP/actions.lock" "$LOCKFILE"; fi
+          if [ "$GIT_INIT" = true ]; then rm -rf "$AUDIT_PATH/.git"; fi

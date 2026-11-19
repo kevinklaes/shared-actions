@@ -52,6 +52,13 @@ by the lockfile of the repository that defines it
 ([docs](https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles)). Callers
 pin this repo itself with the tag or SHA in their `jobs.<id>.uses`.
 
+## Releases
+
+- `v1.0.1`: `action-security-check` no longer fails on an `actions.lock` without dependencies (see below),
+  and takes a `path` input. Callers can stay on `v1.0.0` unless they hit this; moving up means changing
+  the `@v1.0.0` refs and running `gh actions-lock`.
+- `v1.0.0`: first release.
+
 ## Inputs
 
 ### `action-security-check.yml`
@@ -61,10 +68,17 @@ pin this repo itself with the tag or SHA in their `jobs.<id>.uses`.
 | `runs-on` | `'"ubuntu-slim"'` | JSON for `runs-on`, read with `fromJSON`. A self-hosted runner: `'["self-hosted", "training-mini"]'`. |
 | `zizmor-version` | `1.32.0` | Exact zizmor version. Keep it at 1.32.0 or later: earlier versions don't understand `actions.lock` and demand hash-pinned `uses:`. |
 | `min-severity` | `low` | Lowest severity that fails the job: `unknown`, `informational`, `low`, `medium` or `high`. The default fails on every real finding and ignores informational notes. |
+| `path` | `.` | Directory to audit, relative to the checkout root. A subdirectory is audited as a repo of its own: its own `.github/workflows/actions.lock` and `zizmor.yml`. |
 
 zizmor audits the whole checkout (workflows, composite actions, Dependabot config) and reports findings as
 annotations. It picks up a `zizmor.yml` (repo root or `.github/`) on its own, so use that to ignore or tune
 individual audits.
+
+When the caller's workflows use no actions directly (only reusable workflows like these),
+`gh actions-lock` writes an `actions.lock` with no `dependencies:` key, and zizmor 1.32.0 can't parse it
+("missing field `dependencies`"). Such a lockfile pins nothing, so the workflow sets it aside for the zizmor
+run and leaves a notice; `actions-lock-check` still verifies it. `.github/workflows/ci.yml` covers this case
+with the fixture repo in `tests/fixtures/no-dependencies`.
 
 ### `actions-lock-check.yml`
 
