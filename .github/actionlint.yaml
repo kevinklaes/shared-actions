@@ -1,0 +1,8 @@
+# actionlint v1.7.12 (latest as of 2026-11) predates same-repo `uses: $/...`
+# reusable-workflow calls and flags them as malformed. GitHub accepts them
+# (CI on main passes), so ignore only that message. Remove once actionlint
+# supports the syntax (sa-2g2).
+paths:
+  .github/workflows/**/*.{yml,yaml}:
+    ignore:
+      - 'reusable workflow call "\$/\.github/workflows/[^"]+" at "uses" is not following the format'
